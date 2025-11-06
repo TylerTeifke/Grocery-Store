@@ -71,6 +71,11 @@ def add_employee(connection, cursor):
 
 #Will search the database to make sure the cashier ID is valid
 def validate_cashier(cashier_ID, cursor):
+    if cashier_ID == '':
+        print('Invalid cashier ID. Try again')
+        print('')
+        return False
+
     #Will search the database for cashiers with the user defined ID
     query = "SELECT * FROM employees WHERE position_ID = 1 AND ID = ?"
     values = [cashier_ID]
@@ -90,13 +95,6 @@ def validate_cashier(cashier_ID, cursor):
 def validate_customer(first_name, last_name, cashier_ID, cursor):
     if validate_name(first_name, last_name) == False:
         return False
-    
-    int_ID = int(cashier_ID)
-
-    #if int_ID < 0:
-    #    print('Invalid cashier ID. Try again')
-    #    print('')
-    #    return False
     if validate_cashier(cashier_ID, cursor) == False:
         return False
     return True
@@ -123,6 +121,66 @@ def add_customer(connection, cursor):
     
     connection.commit()
 
+# Will be used to make sure the product type ID entered was valid
+def validate_product_type(type_ID, cursor):
+    if type_ID == '':
+        return False
+    
+    #Will search the database for product types with the user defined ID
+    query = "SELECT * FROM product_types WHERE ID = ?"
+    values = [type_ID]
+    cursor.execute(query, values)
+
+    result = cursor.fetchall()
+
+    #If no product has the matching type, then return false
+    if len(result) < 1:
+        return False
+    
+    return True
+
+def validate_product(name, type_ID, price, cursor):
+    if name == '':
+        print('Invalid name. Try ngain')
+        print('')
+        return False
+    if validate_product_type(type_ID, cursor) == False:
+        print('Invalid type ID. Try ngain')
+        print('')
+        return False
+    if price == '' or int(price) < 1:
+        print('Invalid price. Try ngain')
+        print('')
+        return False
+    return True
+
+def add_product(connection, cursor):
+    can_continue = False
+
+    while can_continue == False:
+        name = input('Enter Product Name: ')
+        print('Enter a number for a product type')
+        print('[1] for dairy')
+        print('[2] for meat')
+        print('[3] for non-perishables')
+        print('[4] for fruit')
+        print('[5] for vegetables')
+        type_ID = input('Enter Type: ')
+        price = input('Enter Price: ')
+
+        can_continue = validate_product(name, type_ID, price, cursor)
+
+    # Will get the new product detail's ID by counting how many product details there are currently, and then incrementing by 1
+    cursor.execute("SELECT COUNT(*) FROM product_details;")
+    id = cursor.fetchone()[0] + 1
+    
+	#Will insert the new values into the database
+    query = "INSERT INTO product_details(ID, name, type_ID, price) VALUES(?, ?, ?, ?)"
+    values = (id, name, type_ID, price)
+    cursor.execute(query, values)
+
+    connection.commit()
+
 try:
     connection = sqlite3.connect('grocery_store.db')
     print('connection opened')
@@ -135,7 +193,8 @@ try:
         print('Type [2] to add a customer')
         print('Type [3] to add a purchase')
         print('Type [4] to add a product')
-        print('Type [5] to quit')
+        print('Type [5] to add a product to the inventory')
+        print('Type [6] to quit')
         code = input('--> ')
         int_code = int(code)
         
@@ -143,6 +202,8 @@ try:
             add_employee(connection, cursor)
         elif int_code == 2:
             add_customer(connection, cursor)
+        elif int_code == 4:
+            add_product(connection, cursor)
         else:
             break
 
