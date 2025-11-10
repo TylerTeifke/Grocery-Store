@@ -1,4 +1,5 @@
 import sqlite3
+from math import isnan
 
 # a list of all the registers in the store
 registers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'
@@ -181,6 +182,112 @@ def add_product(connection, cursor):
 
     connection.commit()
 
+#Will be used to validate data involving numbers
+def validate_number(number, upper_limit, lower_limit):
+    if number == '' or not number.isdecimal():
+        return False
+    if int(number) > upper_limit or int(number) < lower_limit:
+        return False
+    return True
+
+#Will make sure the day does not exceed the number of days in the month
+def validate_day(day, month):
+    days_in_each_month = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    if day > days_in_each_month[month - 1]:
+        return False
+    return True
+
+#Will be used to validate a date entered
+def validate_date(date, cursor, details_ID):
+    #Will see if a blank date is valid for this specific item
+    if date == '':
+        query = """SELECT product_types.ID
+                    FROM product_types
+                    JOIN product_details ON product_types.ID = product_details.type_ID
+                    WHERE product_details.ID = ?"""
+        value = [details_ID]
+        cursor.execute(query, value)
+        result = cursor.fetchone()[0]
+
+        if result != 3:
+            print('Perishable Items must have an expiration date. Try again')
+            print('')
+            return False
+        else:
+            return True
+        
+        
+
+    if date.count('/') < 2 or date.count('/') > 2:
+        print('Invalid date format. Format like mm/dd/yy')
+        print('')
+        return False
+    
+    #Will indivdually validate the day, month, and year
+    date_details = date.split('/')
+    if validate_number(date_details[0], 12, 1) == False:
+        print('Invalid month. Try again')
+        print('')
+        return False
+    if validate_number(date_details[1], 31, 1) == False or validate_day(int(date_details[1]), int(date_details[0])) == False:
+        print('Invalid day. Try again')
+        print('')
+        return False
+    if validate_number(date_details[2], 99, 0) == False:
+        print('Invalid year. Try again')
+        print('')
+        return False
+    
+    return True
+
+def validate_inventory_item(details_ID, date, upper_details_limit, lower_details_limit, cursor):
+    if validate_number(details_ID, upper_details_limit, lower_details_limit) == False:
+        print('Invalid product ID. Try again')
+        print('')
+        return False
+    if validate_date(date, cursor, details_ID) == False:
+        return False
+    return True
+
+def add_to_inventory(connection, cursor):
+    #Will get the name and ID of all products
+    query = "SELECT ID, name FROM product_details"
+    cursor.execute(query)
+    products = cursor.fetchall()
+
+    if len(products) == 0:
+        print('No products to add to the inventory')
+        print('')
+        return
+    
+    can_continue = False
+
+    while can_continue == False:
+        print('Enter a number for the product you wish to add')
+        #Will list all of the products that can be added to the inventory
+        for product in products:
+            print('Enter [' + str(product[0]) + '] for ' + str(product[1]))
+        details_ID = input('Enter Product Number: ')
+        date = input('Enter Expiration Date (Leave blank if there is no expiration date): ')
+
+        can_continue = validate_inventory_item(details_ID, date, len(products), 1, cursor)
+
+    #Will enter date as a null value in the database if no number was submitted
+    if date == '':
+        date = None
+
+    # Will get the new product's ID by counting how many products there are currently, and then incrementing by 1
+    cursor.execute("SELECT COUNT(*) FROM products;")
+    id = cursor.fetchone()[0] + 1
+    
+	#Will insert the new values into the database
+    query = "INSERT INTO products(ID, details_ID, expiration_date) VALUES(?, ?, ?)"
+    values = (id, details_ID, date)
+    cursor.execute(query, values)
+    
+    connection.commit()
+
 try:
     connection = sqlite3.connect('grocery_store.db')
     print('connection opened')
@@ -193,7 +300,7 @@ try:
         print('Type [2] to add a customer')
         print('Type [3] to add a purchase')
         print('Type [4] to add a product')
-        print('Type [5] to add a product to the inventory')
+        print('Type [5] to add a copy of a product to the inventory')
         print('Type [6] to quit')
         code = input('--> ')
         int_code = int(code)
@@ -204,6 +311,8 @@ try:
             add_customer(connection, cursor)
         elif int_code == 4:
             add_product(connection, cursor)
+        elif int_code == 5:
+            add_to_inventory(connection, cursor)
         else:
             break
 
