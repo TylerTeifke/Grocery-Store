@@ -226,6 +226,14 @@ def validate_date(date, cursor, details_ID):
     
     #Will indivdually validate the day, month, and year
     date_details = date.split('/')
+
+    #Will make it so the expiration date is formatted correctley
+    if (len(date_details[0]) < 2 or len(date_details[0]) > 2 or 
+    len(date_details[1]) < 2 or len(date_details[1]) > 2 or 
+    len(date_details[2]) < 2 or len(date_details[2]) > 2):
+        print('Invalid date format. Format like mm/dd/yy')
+        print('')
+        return False
     if validate_number(date_details[0], 12, 1) == False:
         print('Invalid month. Try again')
         print('')
