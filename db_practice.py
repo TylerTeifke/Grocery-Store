@@ -122,6 +122,96 @@ def add_customer(connection, cursor):
     
     connection.commit()
 
+#Will make sure the customer ID is valid 
+def validate_customer_id(customer_id, cursor):
+    #Will make sure the customer ID is an actual number
+    if customer_id == '' or not customer_id.isdecimal():
+        print('Customer ID must be a number. Try again')
+        print('')
+        return False
+    
+    #Will create a list of customers in the database
+    query = "SELECT * FROM customers"
+    cursor.execute(query)
+    result = cursor.fetchall()
+
+    int_id = int(customer_id)
+
+    #There is no valid ID that is less than 1 or greater than the number of customers
+    if int_id < 1 or int_id > len(result):
+        print('Invalid ID. Try again')
+        print('')
+        return False
+
+    return True
+
+#Will make sure that an ID is valid
+def validate_id(id, table, cursor):
+    #Will make sure the ID is an actual number
+    if id == '' or not id.isdecimal():
+        #Will print out the name of the table without the 's' at the end
+        print(table[:len(table) - 1], 'ID must be a number. Try again')
+        print('')
+        return False
+    
+    #Will create a list from the database. Since table names cannot be parameterized, I have to
+    #make a string with the table name
+    query = "SELECT * FROM " + table
+    cursor.execute(query)
+    result = cursor.fetchall()
+
+    int_id = int(id)
+
+    #There is no valid ID that is less than 1 or greater than the number of entries in a table
+    if int_id < 1 or int_id > len(result):
+        print('Invalid', table[:len(table) - 1], 'ID. Try again')
+        print('')
+        return False
+
+    return True
+
+#Will determine if the combination of customer and product IDs is already in the purchases table
+def is_duplicate(customer_id, product_id, cursor):
+    #Will create a list from the database
+    query = "SELECT * FROM Purchases WHERE customer_id = ? AND product_id = ?"
+    value = [customer_id, product_id]
+    cursor.execute(query, value)
+    result = cursor.fetchall()
+
+    #return true if there is already a matching entry in the database
+    if len(result) > 0:
+        print('This purchase is already in the database, Try again')
+        print('')
+        return True
+    
+    return False
+
+#Will validate the purchase information
+def validate_purchase(customer_id, product_id, cursor):
+    if not validate_id(customer_id, "Customers", cursor) or not validate_id(product_id, "Products", cursor):
+        return False
+    if is_duplicate(customer_id, product_id, cursor):
+        return False
+    return True
+
+#Will add a purchase to the database
+def add_purchase(connection, cursor):
+    can_continue = False
+
+    while not can_continue:
+        customer_id = input('Enter customer ID: ')
+        product_id = input('Enter product ID: ')
+
+        can_continue = validate_purchase(customer_id, product_id, cursor)
+    
+	#Will insert the new values into the database
+    query = "INSERT INTO purchases(customer_ID, Product_ID) VALUES(?, ?)"
+    values = (customer_id, product_id)
+    cursor.execute(query, values)
+
+    connection.commit()
+
+
 # Will be used to make sure the product type ID entered was valid
 def validate_product_type(type_ID, cursor):
     if type_ID == '':
@@ -317,6 +407,8 @@ try:
             add_employee(connection, cursor)
         elif int_code == 2:
             add_customer(connection, cursor)
+        elif int_code == 3:
+            add_purchase(connection, cursor)
         elif int_code == 4:
             add_product(connection, cursor)
         elif int_code == 5:
