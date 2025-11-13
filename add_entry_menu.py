@@ -386,14 +386,10 @@ def add_to_inventory(connection, cursor):
     
     connection.commit()
 
-try:
-    connection = sqlite3.connect('grocery_store.db')
-    print('connection opened')
-    cursor = connection.cursor()
-
+def main(connection, cursor):
     while True:
 
-        print('Welcome to the grocery store database, here you can add, delete, and update all records')
+        print('Welcome to the new entries menu. Type the specified number to add an entry to a table')
         print('Type [1] to add an employee')
         print('Type [2] to add a customer')
         print('Type [3] to add a purchase')
@@ -401,27 +397,19 @@ try:
         print('Type [5] to add a copy of a product to the inventory')
         print('Type [6] to quit')
         code = input('--> ')
-        int_code = int(code)
         
-        if int_code == 1:
+        if code == '' or not code.isdecimal() or int(code) < 1 or int(code) > 6:
+            print('Invalid code. Try again')
+            print('')
+        elif int(code) == 1:
             add_employee(connection, cursor)
-        elif int_code == 2:
+        elif int(code) == 2:
             add_customer(connection, cursor)
-        elif int_code == 3:
+        elif int(code) == 3:
             add_purchase(connection, cursor)
-        elif int_code == 4:
+        elif int(code) == 4:
             add_product(connection, cursor)
-        elif int_code == 5:
+        elif int(code) == 5:
             add_to_inventory(connection, cursor)
         else:
             break
-
-    cursor.close()
-
-except sqlite3.Error as error:
-    print('Error occurred - ', error)
-
-finally:
-    if connection:
-        connection.close()
-        print('connection closed')
