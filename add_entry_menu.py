@@ -1,6 +1,8 @@
 import sqlite3
 from math import isnan
 
+#This file will handle adding entries to the database
+
 # a list of all the registers in the store
 registers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'
              , 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -39,6 +41,19 @@ def validate_employee(first_name, last_name, position, register, salary):
 
     return True
 
+#Will generate a new ID for a new entry in a table
+def make_new_ID(cursor, table):
+    query = "SELECT ID FROM " + table + " ORDER BY ID DESC LIMIT 1;"
+    cursor.execute(query)
+    result = cursor.fetchone()
+
+    #If the table is currently empty, then this new entry will have an ID of 1.
+    #Otherwise just increment the highest ID
+    if result is None:
+        return 1
+    else:
+        return result[0] + 1
+
 #Gets user input for new employee
 def add_employee(connection, cursor):
     can_continue = False
@@ -59,9 +74,8 @@ def add_employee(connection, cursor):
     if position != '1':
         register = None
 
-    # Will get the new employees ID by counting how many employees there are currently, and then incrementing by 1
-    cursor.execute("SELECT COUNT(*) FROM employees;")
-    id = cursor.fetchone()[0] + 1
+    #cursor.execute("SELECT COUNT(*) FROM employees;")
+    id = make_new_ID(cursor, 'Employees')
     
 	#Will insert the new values into the database
     query = "INSERT INTO employees(ID, first_name, last_name, register, position_ID, salary) VALUES(?, ?, ?, ?, ?, ?)"
@@ -111,9 +125,8 @@ def add_customer(connection, cursor):
 
         can_continue = validate_customer(first_name, last_name, cashier_ID, cursor)
 
-    # Will get the new customer's ID by counting how many customers there are currently, and then incrementing by 1
-    cursor.execute("SELECT COUNT(*) FROM customers;")
-    id = cursor.fetchone()[0] + 1
+    #cursor.execute("SELECT COUNT(*) FROM customers;")
+    id = make_new_ID(cursor, 'Customers')
     
 	#Will insert the new values into the database
     query = "INSERT INTO customers(ID, first_name, last_name, employee_ID) VALUES(?, ?, ?, ?)"
@@ -121,29 +134,6 @@ def add_customer(connection, cursor):
     cursor.execute(query, values)
     
     connection.commit()
-
-#Will make sure the customer ID is valid 
-def validate_customer_id(customer_id, cursor):
-    #Will make sure the customer ID is an actual number
-    if customer_id == '' or not customer_id.isdecimal():
-        print('Customer ID must be a number. Try again')
-        print('')
-        return False
-    
-    #Will create a list of customers in the database
-    query = "SELECT * FROM customers"
-    cursor.execute(query)
-    result = cursor.fetchall()
-
-    int_id = int(customer_id)
-
-    #There is no valid ID that is less than 1 or greater than the number of customers
-    if int_id < 1 or int_id > len(result):
-        print('Invalid ID. Try again')
-        print('')
-        return False
-
-    return True
 
 #Will make sure that an ID is valid
 def validate_id(id, table, cursor):
@@ -156,14 +146,13 @@ def validate_id(id, table, cursor):
     
     #Will create a list from the database. Since table names cannot be parameterized, I have to
     #make a string with the table name
-    query = "SELECT * FROM " + table
-    cursor.execute(query)
+    query = "SELECT * FROM " + table + " WHERE ID = ?"
+    value = [id]
+    cursor.execute(query, value)
     result = cursor.fetchall()
 
-    int_id = int(id)
-
-    #There is no valid ID that is less than 1 or greater than the number of entries in a table
-    if int_id < 1 or int_id > len(result):
+    #If no entry has the matching ID, then the ID is invalid
+    if len(result) < 1:
         print('Invalid', table[:len(table) - 1], 'ID. Try again')
         print('')
         return False
@@ -230,17 +219,25 @@ def validate_product_type(type_ID, cursor):
     
     return True
 
+#Will be used to validate data involving numbers
+def validate_number(number, upper_limit, lower_limit):
+    if number == '' or not number.isdecimal():
+        return False
+    if int(number) > upper_limit or int(number) < lower_limit:
+        return False
+    return True
+
 def validate_product(name, type_ID, price, cursor):
     if name == '':
-        print('Invalid name. Try ngain')
+        print('Invalid name. Try again')
         print('')
         return False
     if validate_product_type(type_ID, cursor) == False:
-        print('Invalid type ID. Try ngain')
+        print('Invalid type ID. Try again')
         print('')
         return False
-    if price == '' or int(price) < 1:
-        print('Invalid price. Try ngain')
+    if validate_number(price, 10000000000, 1) == False:
+        print('Invalid price. Try again')
         print('')
         return False
     return True
@@ -261,9 +258,8 @@ def add_product(connection, cursor):
 
         can_continue = validate_product(name, type_ID, price, cursor)
 
-    # Will get the new product detail's ID by counting how many product details there are currently, and then incrementing by 1
-    cursor.execute("SELECT COUNT(*) FROM product_details;")
-    id = cursor.fetchone()[0] + 1
+    #cursor.execute("SELECT COUNT(*) FROM product_details;")
+    id = make_new_ID(cursor, 'product_details')
     
 	#Will insert the new values into the database
     query = "INSERT INTO product_details(ID, name, type_ID, price) VALUES(?, ?, ?, ?)"
@@ -271,14 +267,6 @@ def add_product(connection, cursor):
     cursor.execute(query, values)
 
     connection.commit()
-
-#Will be used to validate data involving numbers
-def validate_number(number, upper_limit, lower_limit):
-    if number == '' or not number.isdecimal():
-        return False
-    if int(number) > upper_limit or int(number) < lower_limit:
-        return False
-    return True
 
 #Will make sure the day does not exceed the number of days in the month
 def validate_day(day, month):
@@ -339,8 +327,8 @@ def validate_date(date, cursor, details_ID):
     
     return True
 
-def validate_inventory_item(details_ID, date, upper_details_limit, lower_details_limit, cursor):
-    if validate_number(details_ID, upper_details_limit, lower_details_limit) == False:
+def validate_inventory_item(details_ID, date, cursor):
+    if validate_id(details_ID, 'product_details', cursor) == False:
         print('Invalid product ID. Try again')
         print('')
         return False
@@ -369,15 +357,14 @@ def add_to_inventory(connection, cursor):
         details_ID = input('Enter Product Number: ')
         date = input('Enter Expiration Date (Leave blank if there is no expiration date): ')
 
-        can_continue = validate_inventory_item(details_ID, date, len(products), 1, cursor)
+        can_continue = validate_inventory_item(details_ID, date, cursor)
 
     #Will enter date as a null value in the database if no number was submitted
     if date == '':
         date = None
 
-    # Will get the new product's ID by counting how many products there are currently, and then incrementing by 1
-    cursor.execute("SELECT COUNT(*) FROM products;")
-    id = cursor.fetchone()[0] + 1
+    #cursor.execute("SELECT COUNT(*) FROM products;")
+    id = make_new_ID(cursor, 'Products')
     
 	#Will insert the new values into the database
     query = "INSERT INTO products(ID, details_ID, expiration_date) VALUES(?, ?, ?)"
