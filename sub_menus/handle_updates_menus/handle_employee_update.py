@@ -56,7 +56,7 @@ def validate_register(register):
     return True
 
 #Will check to see if the employee is a cashier.
-#If not then thier register cannot be changed because they do not have one
+#If not then their register cannot be changed because they do not have one
 def validate_position(cursor, id):
     query = 'SELECT * FROM Employees WHERE ID = ? AND Position_ID = 1'
     value = [id]
@@ -85,6 +85,22 @@ def update_register(connection, cursor):
 
     connection.commit()
 
+#Will check to see if an employee is currently helping a customer.
+#If so, then their position cannot be changed
+def is_connected(cursor, id):
+    query = 'SELECT * FROM Customers WHERE employee_ID = ?'
+    value = [id]
+    cursor.execute(query, value)
+
+    results = cursor.fetchall()
+
+    if len(results) > 0:
+        print('This employee is currently helping a customer, their position cannot be changed')
+        print('')
+        return True
+    
+    return False
+
 #Will update an employee's position in the company
 def update_position(connection, cursor):
     can_continue = False
@@ -95,7 +111,7 @@ def update_position(connection, cursor):
         print('Type [2] for Manager')
         print('Type [3] for Clerk')
         position_id = input('Enter new position: ')
-        can_continue = validate_id(cursor, id, 'Employees') and validate_id(cursor, position_id, 'Positions')
+        can_continue = validate_id(cursor, id, 'Employees') and validate_id(cursor, position_id, 'Positions') and not is_connected(cursor, id)
 
     query = 'UPDATE Employees SET position_id = ? WHERE ID = ?'
     values = (position_id, id)

@@ -1,14 +1,6 @@
-import handle_employee_update
+from sub_menus.handle_updates_menus import handle_customer_updates, handle_employee_update
 
 #This file will handle updating the information in an entry
-
-#Will allow the user to update an employee's name, position, cash register, and salary
-def update_employee(connection, cursor):
-    return True
-
-def update_customer(connection, cursor):
-    return True
-
 def update_purchase(connection, cursor):
     return True
 
@@ -35,7 +27,7 @@ def main(connection, cursor):
         elif int(code) == 1:
             handle_employee_update.main(connection, cursor)
         elif int(code) == 2:
-            update_customer(connection, cursor)
+            handle_customer_updates.main(connection, cursor)
         elif int(code) == 3:
             update_purchase(connection, cursor)
         elif int(code) == 4:
