@@ -1,11 +1,5 @@
-from sub_menus.handle_updates_menus import update_customer, update_employee, update_purchase
-
 #This file will handle updating the information in an entry
-def update_product(connection, cursor):
-    return True
-
-def update_inventory(connection, cursor):
-    return True
+from sub_menus.handle_updates_menus import update_customer, update_employee, update_purchase, update_product, update_inventory
 
 def main(connection, cursor):
     while True:
@@ -28,8 +22,8 @@ def main(connection, cursor):
         elif int(code) == 3:
             update_purchase.main(connection, cursor)
         elif int(code) == 4:
-            update_product(connection, cursor)
+            update_product.main(connection, cursor)
         elif int(code) == 5:
-            update_inventory(connection, cursor)
+            update_inventory.main(connection, cursor)
         else:
             break
