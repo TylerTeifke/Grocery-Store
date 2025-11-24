@@ -1,5 +1,5 @@
 import sqlite3
-from sub_menus import add_entry_menu, list_entries_menu, delete_entry_menu, update_entry_menu
+from sub_menus import add_entry_menu, list_entries_menu, delete_entry_menu, update_entry_menu, view_totals_menu
 
 try:
     connection = sqlite3.connect('grocery_store.db')
@@ -27,6 +27,8 @@ try:
             update_entry_menu.main(connection, cursor)
         elif int(code) == 4:
             delete_entry_menu.main(connection, cursor)
+        elif int(code) == 5:
+            view_totals_menu.main(cursor)
         else:
             break
 
