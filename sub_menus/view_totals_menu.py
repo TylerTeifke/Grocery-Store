@@ -1,7 +1,7 @@
 #This file will allow the user to find all of the totals of various entries.
 #Like the total amount of money a customer has spent
 
-from sub_menus.handle_totals_files import view_customer_totals, view_all_customers
+from sub_menus.handle_totals_files import view_customer_totals, view_all_customers, view_all_employees, view_product_total
 
 def main(cursor):
     while True:
@@ -10,7 +10,7 @@ def main(cursor):
         print('Type [1] to view the total amount of money one customer has spent')
         print('Type [2] to view the total amount of money all customers have spent')
         print('Type [3] to view the total amount of money all employees make')
-        print('Type [4] to view the total amount of money every product costs')
+        print('Type [4] to view the total amount cost of all products')
         print('Type [5] to quit')
         code = input('--> ')
         
@@ -21,5 +21,9 @@ def main(cursor):
             view_customer_totals.main(cursor)
         elif int(code) == 2:
             view_all_customers.main(cursor)
+        elif int(code) == 3:
+            view_all_employees.main(cursor)
+        elif int(code) == 4:
+            view_product_total.main(cursor)
         else:
             break
